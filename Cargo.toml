@@ -3,5 +3,10 @@ name = "mdformat"
 version = "0.1.0"
 authors = ["Afnan Enayet <afnan@afnan.io>"]
 edition = "2018"
+publish = false
 
 [dependencies]
+comrak = "0.6.2"
+structopt = "0.2.18"
+serde = "1.0.94"
+serde_derive = "1.0.94"
