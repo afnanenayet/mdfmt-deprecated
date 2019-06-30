@@ -13,16 +13,16 @@ use structopt::StructOpt;
 pub struct Opt {
     /// Whether the file should be modified in place (this is a potentially destructive change)
     #[structopt(short = "i", long = "in-place")]
-    in_place: bool,
+    pub in_place: bool,
 
     /// The input file to format
     #[structopt(parse(from_os_str))]
-    input_file: PathBuf,
+    pub input_file: PathBuf,
 
     /// A configuration file specifying the options to use when formatting the markdown file. Any
     /// command line options will override the options from the config file.
     #[structopt(short = "c", long = "config", parse(from_os_str))]
-    config_file: Option<PathBuf>,
+    pub config_file: Option<PathBuf>,
 }
 
 impl Opt {
@@ -64,7 +64,7 @@ pub enum OptError {
 pub struct Config {
     /// The max line width for the output file.
     #[serde(rename = "line-width")]
-    line_width: u32,
+    line_width: usize,
 
     /// The indent width to use for the output file. This must be less than the line width.
     #[serde(rename = "indent-width")]
