@@ -13,9 +13,10 @@ use std::str;
 
 /// Dispatch the proper routine for an `AstNode`
 pub fn format_node(node: &AstNode, w: &mut Write) -> Result<(), Error> {
-    match node.data.borrow().value {
+    let data = node.data.borrow();
+    match data.value {
         NodeValue::Paragraph => {
-            if let Ok(s) = str::from_utf8(&node.data.borrow().content) {
+            if let Ok(s) = str::from_utf8(&data.content) {
                 // Replace the newlines with spaces
                 let stripped: String = s.replace("\n", " ");
                 write!(w, "{}\n\n", stripped)?;
