@@ -1,6 +1,8 @@
 //! A wrapper for comrak's parsing options
 
 use comrak::{nodes::AstNode, parse_document, Arena, ComrakOptions};
+use failure::Error;
+use std::io::Write;
 
 /// Parse the contents of a document to a tree
 ///
@@ -24,12 +26,16 @@ pub fn parse<'a>(arena: &'a Arena<AstNode<'a>>, contents: &str) -> &'a AstNode<'
 ///
 /// Given some root node, this method will iterate through each node and apply some provided
 /// function to each node.
-pub fn iter_nodes<'a, F>(node: &'a AstNode<'a>, f: &F)
+///
+/// This method also requires a sink to write to, so output can be progressively output into the
+/// buffer sink.
+pub fn iter_nodes<'a, F>(node: &'a AstNode<'a>, w: &mut Write, f: &F) -> Result<(), Error>
 where
-    F: Fn(&'a AstNode<'a>),
+    F: Fn(&'a AstNode<'a>, &mut Write) -> Result<(), Error>,
 {
-    f(node);
+    f(node, w)?;
     for c in node.children() {
-        iter_nodes(c, f);
+        iter_nodes(c, w, f)?;
     }
+    Ok(())
 }
