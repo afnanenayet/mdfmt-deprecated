@@ -15,6 +15,15 @@ use std::str;
 pub fn format_node(node: &AstNode, w: &mut Write) -> Result<(), Error> {
     let data = node.data.borrow();
     match data.value {
+        NodeValue::List(list) => {
+            if let Ok(s) = str::from_utf8(&data.content) {
+                // Replace the newlines with spaces
+                let stripped: String = s.replace("\n", " ");
+                // TODO(afnan) recursively traverse this
+                // Access the children of this list with `data.children`
+                write!(w, "- {}", stripped)?;
+            }
+        }
         NodeValue::Paragraph => {
             if let Ok(s) = str::from_utf8(&data.content) {
                 // Replace the newlines with spaces
@@ -25,4 +34,8 @@ pub fn format_node(node: &AstNode, w: &mut Write) -> Result<(), Error> {
         _ => (),
     }
     Ok(())
+}
+
+fn format_list(node: &AstNode, w: &mut Write, depth: usize) -> Result<(), Error> {
+    unimplemented!();
 }
