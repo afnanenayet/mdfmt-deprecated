@@ -2,14 +2,16 @@
 //! serialization and what is acceptable from the command line.
 
 use failure::Fail;
+use getset::Getters;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 /// Format markdown files
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Getters, Clone)]
 #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+#[get = "pub"]
 pub struct Opt {
     /// Whether the file should be modified in place (this is a potentially destructive change)
     #[structopt(short = "i", long = "in-place")]
@@ -20,7 +22,7 @@ pub struct Opt {
     pub input_file: PathBuf,
 
     /// A configuration file specifying the options to use when formatting the markdown file. Any
-    /// command line options will override the options from the config file.
+    /// command line options will override options from the [optional] config file.
     #[structopt(short = "c", long = "config", parse(from_os_str))]
     pub config_file: Option<PathBuf>,
 }
@@ -60,7 +62,8 @@ pub enum OptError {
 }
 
 /// The struct representing the configuration options for the app.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Getters)]
+#[get = "pub"]
 pub struct Config {
     /// The max line width for the output file.
     #[serde(rename = "line-width")]
@@ -68,7 +71,7 @@ pub struct Config {
 
     /// The indent width to use for the output file. This must be less than the line width.
     #[serde(rename = "indent-width")]
-    indent_width: u32,
+    indent_width: usize,
 
     /// The symbol to use to denote lists. This can either be `-` or `*`.
     #[serde(rename = "list-delim")]
@@ -78,9 +81,20 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            line_width: 80,
+            line_width: 79,
             indent_width: 4,
             list_delim: ListDelimiter::Asterisk,
+        }
+    }
+}
+
+impl From<Opt> for Config {
+    fn from(opt: Opt) -> Self {
+        if let Some(config_file) = opt.config_file {
+            // TODO(afnan) implement this
+            panic!("Config file deserialization hasn't been implemented yet");
+        } else {
+            return Self { ..Self::default() };
         }
     }
 }

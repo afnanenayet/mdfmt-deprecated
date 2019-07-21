@@ -6,36 +6,57 @@
 //! The general idea is to have each AST type be formatted separately, since they all have
 //! different logic.
 
-use comrak::nodes::{AstNode, NodeValue};
-use failure::Error;
-use std::io::Write;
-use std::str;
+use crate::config::Config;
+use comrak::{
+    arena_tree::{NodeEdge, Traverse},
+    nodes::{AstNode, NodeValue},
+};
+use std::rc::Rc;
 
-/// Dispatch the proper routine for an `AstNode`
-pub fn format_node(node: &AstNode, w: &mut Write) -> Result<(), Error> {
-    let data = node.data.borrow();
-    match data.value {
-        NodeValue::List(list) => {
-            if let Ok(s) = str::from_utf8(&data.content) {
-                // Replace the newlines with spaces
-                let stripped: String = s.replace("\n", " ");
-                // TODO(afnan) recursively traverse this
-                // Access the children of this list with `data.children`
-                write!(w, "- {}", stripped)?;
-            }
-        }
-        NodeValue::Paragraph => {
-            if let Ok(s) = str::from_utf8(&data.content) {
-                // Replace the newlines with spaces
-                let stripped: String = s.replace("\n", " ");
-                write!(w, "{}\n\n", stripped)?;
-            }
-        }
-        _ => (),
-    }
-    Ok(())
+/// A regular ole' stack
+type Stack<T> = Vec<T>;
+
+/// Routines to format a markdown file
+pub struct Formatter {
+    /// The formatting configuration
+    ///
+    /// This is a reference counted heap variable because multiple Formatters can refer to the same
+    /// config file, so it makes sense to have multiple ownership.
+    config: Rc<Config>,
+
+    /// An internal stack containing the prefix for a markdown element
+    prefix_stack: Stack<String>,
 }
 
-fn format_list(node: &AstNode, w: &mut Write, depth: usize) -> Result<(), Error> {
-    unimplemented!();
+impl Formatter {
+    /// Create a new `Formatter`, given a formatting config
+    pub fn new(config: Rc<Config>) -> Self {
+        Self {
+            config,
+            prefix_stack: Vec::new(),
+        }
+    }
+
+    /// Get the number of spaces to indent by
+    fn indent_offset(&self, indents: usize) -> usize {
+        self.config.indent_width() * indents
+    }
+
+    /// Format a markdown document from the AST
+    ///
+    /// This method requires the root node of a markdown file. This will also function on a subset
+    /// of the AST (we don't need the *actual* root).
+    pub fn format_md<'a>(
+        &self,
+        root: &'a comrak::arena_tree::Node<'a, std::cell::RefCell<comrak::nodes::Ast>>,
+    ) -> String {
+        let mut formatted = String::new();
+        for edge in root.traverse() {
+            match edge {
+                NodeEdge::Start(node) => formatted.push_str("[start]\n"),
+                NodeEdge::End(node) => formatted.push_str("[end]\n"),
+            }
+        }
+        formatted
+    }
 }
