@@ -25,9 +25,9 @@ fn main() -> Result<(), Error> {
     // We can use a stack to keep track of the things we need to prepend, and the preface will be
     // the combination of all of the things in the stack
     let fmt = Formatter::new(config);
-    let test_str = fmt.format_md(&root);
+    let formatted_doc = fmt.format_md(&root);
 
     // TODO(afnan) remove
-    println!("Test string:\n{}", test_str);
+    println!("Test string:\n{}", formatted_doc);
     Ok(())
 }

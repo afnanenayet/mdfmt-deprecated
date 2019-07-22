@@ -16,6 +16,9 @@ use std::rc::Rc;
 /// A regular ole' stack
 type Stack<T> = Vec<T>;
 
+/// A type alias for a reference to a node
+type NodeRef<'a> = &'a comrak::arena_tree::Node<'a, std::cell::RefCell<comrak::nodes::Ast>>;
+
 /// Routines to format a markdown file
 pub struct Formatter {
     /// The formatting configuration
@@ -48,7 +51,7 @@ impl Formatter {
     /// of the AST (we don't need the *actual* root).
     pub fn format_md<'a>(
         &self,
-        root: &'a comrak::arena_tree::Node<'a, std::cell::RefCell<comrak::nodes::Ast>>,
+        root: NodeRef,
     ) -> String {
         let mut formatted = String::new();
         for edge in root.traverse() {
@@ -58,5 +61,15 @@ impl Formatter {
             }
         }
         formatted
+    }
+
+    /// Determine the prefix for a given node
+    ///
+    /// Given the depth and type of a node, figure out the proper prefix for the corresponding
+    /// markdown element. This function is essentially a big lookup table that creates a mapping
+    /// between various markdown elements and their corresponding prefixes
+    fn node_prefix<'a> (&self, node: NodeRef) -> String {
+
+        unimplemented!();
     }
 }
