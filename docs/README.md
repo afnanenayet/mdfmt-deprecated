@@ -9,6 +9,9 @@ well formatted Markdown files. It uses the
 [comrak](https://github.com/kivikakk/comrak) parsing library to create an AST
 from your markdown file, then formats as necessary.
 
+This formatter is alpha stage software and not all markdown elements properly
+work with the formatter.
+
 ## Configuration
 
 There are several options you can configure when using this tool.
