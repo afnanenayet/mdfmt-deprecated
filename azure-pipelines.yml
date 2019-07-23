@@ -13,12 +13,15 @@ strategy:
     windows-stable:
       imageName: 'vs2017-win2016'
       rustup_toolchain: stable
+      target: 'Windows'
     mac-stable:
       imageName: 'macos-10.14'
       rustup_toolchain: stable
+      target: 'Darwin'
     linux-stable:
       imageName: 'ubuntu-16.04'
       rustup_toolchain: stable
+      target: 'Linux'
 
 pool:
   vmImage: $(imageName)
@@ -52,15 +55,16 @@ steps:
       rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
       archiveType: 'tar'
       tarCompression: 'gz'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET).tar.gz'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/mdformat-$(target).tar.gz'
   - task: GithubRelease@0
     displayName: 'Create Github release'
     inputs:
       githubConnection: afnanenayetgh
       repositoryName: afnanenayet/mdformat
+      tag: '$(tagName)'
       action: 'edit'
       tagSource: auto
       compareWith: 'lastFullRelease'
       addChangeLog: true
-      assets: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET)'
+      assets: '$(Build.ArtifactStagingDirectory)/mdformat-$(target)'
       assetUploadMode: 'replace'
