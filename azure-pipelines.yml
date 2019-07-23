@@ -56,7 +56,6 @@ steps:
       archiveType: 'tar'
       tarCompression: 'gz'
       archiveFile: '$(Build.ArtifactStagingDirectory)/mdformat-$(target).tar.gz'
-    displayName: "Create tag variable"
   - task: GithubRelease@0
     displayName: 'Create Github release'
     inputs:
