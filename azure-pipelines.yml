@@ -50,7 +50,7 @@ steps:
     inputs:
       githubConnection: afnanenayetgh
       repositoryName: afnanenayet/mdformat
-      action: 'create'
+      action: 'edit'
       tagSource: auto
       compareWith: 'lastFullRelease'
       addChangeLog: true
