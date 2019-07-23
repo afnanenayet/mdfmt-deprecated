@@ -28,6 +28,6 @@ fn main() -> Result<(), Error> {
     let formatted_doc = fmt.format_md(&root);
 
     // TODO(afnan) remove
-    println!("\n\n[START DOCUMENT]\n{}\n[END DOCUMENT]", formatted_doc);
+    println!("{}", formatted_doc);
     Ok(())
 }

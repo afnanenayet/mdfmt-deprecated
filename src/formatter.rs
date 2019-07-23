@@ -7,10 +7,7 @@
 //! different logic.
 
 use crate::config::Config;
-use comrak::{
-    arena_tree::{NodeEdge, Traverse},
-    nodes::{AstNode, NodeValue},
-};
+use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use std::convert::TryInto;
 use std::{mem::discriminant, rc::Rc, str};
 
@@ -47,13 +44,6 @@ pub struct Formatter {
     prefix_stack: Stack<PrefixStackElement>,
 }
 
-/// Constructs the default value for a string, the empty string
-macro_rules! default_string {
-    () => {
-        String::from("")
-    };
-}
-
 impl Formatter {
     /// Create a new `Formatter`, given a formatting config
     pub fn new(config: Rc<Config>) -> Self {
@@ -72,7 +62,7 @@ impl Formatter {
     ///
     /// This method requires the root node of a markdown file. This will also function on a subset
     /// of the AST (we don't need the *actual* root).
-    pub fn format_md<'a>(&mut self, root: NodeRef) -> String {
+    pub fn format_md(&mut self, root: NodeRef) -> String {
         let mut formatted = String::new();
         let mut depth = 0;
         for edge in root.traverse() {
@@ -80,8 +70,8 @@ impl Formatter {
                 // TODO(afnan) if the node is an inline, just dump the text without the prefix, and
                 // use the text wrapping routines
                 NodeEdge::Start(node) => {
+                    println!("[START {}] {:?}", depth, &node.data.borrow().value);
                     depth += 1;
-                    println!("[START {}] {:?}", depth, node.data.borrow().value);
                     // TODO create a method to get a prefix, pass the prefix to the format method
                     // Check to see whether this node allocates a new prefix. If so, add the prefix
                     // to the stack with the metadata so we know when to pop it.
@@ -101,14 +91,13 @@ impl Formatter {
                         None => None,
                     };
 
-                    if let Some(formatted_string) = self.format_node(node, prefix_opt, depth) {
+                    if let Some(formatted_string) = self.format_node(node, prefix_opt) {
                         formatted.push_str(&formatted_string);
                     }
                     node
                 }
                 NodeEdge::End(node) => {
-                    println!("[END {}] {:?}", depth, node.data.borrow().value);
-
+                    println!("[END {}] {:?}", depth, &node.data.borrow().value);
                     // FIXME(afnan) try to prevent trailing newlines
                     // only add a suffix if the next node is not trailing, otherwise we will end up
                     // with a bunch of trailing newline characters
@@ -116,16 +105,17 @@ impl Formatter {
                         formatted.push_str(&suffix);
                     }
 
-                    // determine whether the prefix stack can be popped
+                    // Determine whether the prefix stack can be popped by matching the node type
+                    // and depth. This is similar to how we would create HTML </end> tags if we
+                    // were converting this document to HTML
                     if let Some(last_prefix) = self.prefix_stack.last() {
-                        if discriminant(&node.data.borrow().value)
-                            == discriminant(&last_prefix.node_value)
-                            && depth == last_prefix.depth
-                        {
+                        let node_type = discriminant(&node.data.borrow().value);
+                        let prefix_type = discriminant(&last_prefix.node_value);
+
+                        if node_type == prefix_type && depth == last_prefix.depth {
                             self.prefix_stack.pop();
                         }
                     }
-
                     depth -= 1;
                     node
                 }
@@ -139,17 +129,26 @@ impl Formatter {
     /// This function takes a reference to an AST node and formats a string according the the
     /// formatting configuration options. It takes an optional prefix, which should be the current
     /// prefix on the stack.
-    fn format_node(&self, node: NodeRef, prefix: Option<&str>, depth: usize) -> Option<String> {
+    fn format_node(&self, node: NodeRef, prefix: Option<&str>) -> Option<String> {
         match &node.data.borrow().value {
+            NodeValue::Link(link) => {
+                let url_str = String::from_utf8(link.url.clone()).unwrap();
+                let link_text = collect_text(node.first_child().unwrap());
+                let formatted_link = format!("[{}]({})", link_text, url_str);
+                Some(formatted_link)
+            }
             NodeValue::Paragraph => {
                 let raw_text = collect_text(node);
-                let wrapped = self.wrap_text(prefix, raw_text);
+                let wrapped = self.wrap_text(prefix, &raw_text);
                 Some(wrapped)
             }
             NodeValue::Heading(h) => {
                 // This is guaranteed to never panic because there can be at most 6 levels
                 let hashtags = "#".repeat(h.level.try_into().unwrap());
                 Some(hashtags + " " + &collect_text(node))
+            }
+            NodeValue::HtmlBlock(html_block) => {
+                Some(String::from_utf8(html_block.literal.clone()).unwrap())
             }
             _ => None,
         }
@@ -184,13 +183,20 @@ impl Formatter {
     ///
     /// For example "  * " will ensure that for every line after the first line of text, we lead
     /// with four spaces.
-    fn wrap_text(&self, prefix: Option<&str>, text: String) -> String {
-        println!("wrap text prefix: {:?}", prefix);
-        let tokenized: Vec<&str> = text.split(" ").collect();
+    fn wrap_text(&self, prefix: Option<&str>, text: &str) -> String {
+        // Because we don't want to split up links, we tokenize links first, and then tokenize the
+        // remaining strings by words
+        //
+        let tokenized: Vec<&str> = text.split(' ').collect();
 
         // The resulting vector, in which each string is a separate line
         let mut res_vec = Vec::new();
-        let mut current_line = String::new();
+
+        // We already know the max line width, so we can reserve the memory ahead of time for some
+        // performance gains
+        let mut current_line = String::with_capacity(*self.config.line_width());
+
+        // Calculate the padding for the text "box" on the left side
         let space_prefix = " ".repeat(prefix.unwrap_or("").len());
 
         // Push the prefix only onto the first line
@@ -204,19 +210,14 @@ impl Formatter {
             let space_left = self.config.line_width() - current_line.len();
             if word.len() + 1 > space_left {
                 res_vec.push(current_line);
-                current_line = String::new();
-                current_line.push_str(&space_prefix);
+                current_line = String::with_capacity(*self.config.line_width());
 
-                // We special case the instance where a single word is too big for the line limit
-                // (think a really long link or something), and just put the word on the line by
-                // itself
-                if current_line.len() == 0 {
-                    current_line.push_str(word);
+                if prefix.is_some() {
+                    current_line.push_str(&space_prefix);
                 }
-            } else {
-                current_line.push_str(word);
-                current_line.push_str(" ");
             }
+            current_line.push_str(word);
+            current_line.push_str(" ");
         }
 
         // Push the last line
@@ -229,8 +230,10 @@ impl Formatter {
 ///
 /// This function takes a reference to an existing unicode vector so it can recursively extend
 /// the output.
-fn collect_text_helper<'a>(node: NodeRef, output: &mut Vec<u8>, depth: usize) {
+fn collect_text_helper(node: NodeRef, output: &mut Vec<u8>) {
     match node.data.borrow().value {
+        // Links should handle their own text so we ignore any text inside of a link node
+        NodeValue::Link(_) => (),
         NodeValue::Text(ref literal) | NodeValue::Code(ref literal) => {
             output.extend_from_slice(literal)
         }
@@ -238,7 +241,7 @@ fn collect_text_helper<'a>(node: NodeRef, output: &mut Vec<u8>, depth: usize) {
         NodeValue::LineBreak => output.push(b'\n'),
         _ => {
             for child in node.children() {
-                collect_text_helper(child, output, depth + 1);
+                collect_text_helper(child, output);
             }
         }
     };
@@ -247,17 +250,17 @@ fn collect_text_helper<'a>(node: NodeRef, output: &mut Vec<u8>, depth: usize) {
 /// Recursively get all of the text from a node
 ///
 /// This is a wrapper for the actual recursive function
-fn collect_text<'a>(node: NodeRef) -> String {
+fn collect_text(node: NodeRef) -> String {
     let mut unicode: Vec<u8> = Vec::new();
-    collect_text_helper(node, &mut unicode, 0);
-    String::from_utf8(unicode).unwrap_or("".to_owned())
+    collect_text_helper(node, &mut unicode);
+    String::from_utf8(unicode).unwrap_or_else(|_| "".to_owned())
 }
 
 /// Determine the suffix of a node
 ///
 /// This returns the suffix of a node, if it is applicable. This should be used with the `End`
 /// variant of a node.
-fn node_suffix<'a>(node: NodeRef) -> Option<String> {
+fn node_suffix(node: NodeRef) -> Option<String> {
     let node_variant = &node.data.borrow().value;
 
     // if we have an element that is ending a direct descendant of the document node and a block,
@@ -266,13 +269,24 @@ fn node_suffix<'a>(node: NodeRef) -> Option<String> {
         let parent_type = discriminant(&parent.data.borrow().value);
         let document_type = discriminant(&NodeValue::Document);
 
+        // These are high-level blocks that should be separated by newlines
+        // We special case lists because they already having an extra newline from their internal
+        // `Paragraph` blocks
         if parent_type == document_type && node_variant.block() {
-            return Some("\n\n".to_owned());
+            return match node_variant {
+                NodeValue::List(_) => Some("\n".to_owned()),
+                _ => Some("\n\n".to_owned()),
+            };
         }
+
+        // Otherwise we just want to end the element with a single newline
+        return match node_variant {
+            NodeValue::List(_) | NodeValue::Paragraph => Some("\n".to_owned()),
+            _ => None,
+        };
     }
 
-    match node_variant {
-        NodeValue::List(_) | NodeValue::Paragraph => Some("\n".to_owned()),
-        _ => None,
-    }
+    // This branch only triggers when the `document` node is passed in, which is a sentinel node
+    // that doesn't have any information
+    None
 }
