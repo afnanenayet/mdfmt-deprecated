@@ -40,11 +40,19 @@ steps:
   - script: cargo test --all
     displayName: Cargo test
   - task: CopyFiles@2
-    displayName: Copy release assets
+    displayName: Copy assets
     inputs:
-      sourceFolder: '$(Build.SourcesDirectory)/target/release'
-      contents: mdformat
-      targetFolder: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET)'
+      sourceFolder: '$(Build.SourcesDirectory)/target/$(TARGET)/release'
+      contents: |
+        mdformat
+      targetFolder: '$(Build.BinariesDirectory)'
+ - task: ArchiveFiles@2
+    displayName: Gather assets
+    inputs:
+      rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
+      archiveType: 'tar'
+      tarCompression: 'gz'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET).tar.gz'
   - task: GithubRelease@0
     displayName: 'Create Github release'
     inputs:
