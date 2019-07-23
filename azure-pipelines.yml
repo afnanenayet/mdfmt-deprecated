@@ -39,6 +39,12 @@ steps:
     displayName: Cargo build
   - script: cargo test --all
     displayName: Cargo test
+  - task: CopyFiles@2
+    displayName: Copy release assets
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)/target/$(TARGET)/release'
+      contents: mdformat
+      targetFolder: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET)'
   - task: GithubRelease@0
     displayName: 'Create Github release'
     inputs:
@@ -48,5 +54,5 @@ steps:
       tagSource: auto
       compareWith: 'lastFullRelease'
       addChangeLog: true
-      assets: $(Build.ArtifactStagingDirectory)/mdformat
+      assets: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET)'
       assetUploadMode: 'replace'
