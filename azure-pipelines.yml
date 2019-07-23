@@ -54,3 +54,5 @@ jobs:
         tagSource: auto
         compareWith: 'lastFullRelease'
         addChangeLog: true
+        assets: $(Build.ArtifactStagingDirectory)/mdformat
+        assetUploadMode: delete
