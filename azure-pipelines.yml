@@ -39,18 +39,14 @@ steps:
     displayName: Cargo build
   - script: cargo test --all
     displayName: Cargo test
-
-jobs:
-- job: Plumbing
-  steps:
-    - task: GithubRelease@0
-      displayName: 'Create Github release'
-      inputs:
-        githubConnection: afnanenayetgh
-        repositoryName: afnanenayet/mdformat
-        action: 'create'
-        tagSource: auto
-        compareWith: 'lastFullRelease'
-        addChangeLog: true
-        assets: $(Build.ArtifactStagingDirectory)/mdformat
-        assetUploadMode: 'replace'
+  - task: GithubRelease@0
+    displayName: 'Create Github release'
+    inputs:
+      githubConnection: afnanenayetgh
+      repositoryName: afnanenayet/mdformat
+      action: 'create'
+      tagSource: auto
+      compareWith: 'lastFullRelease'
+      addChangeLog: true
+      assets: $(Build.ArtifactStagingDirectory)/mdformat
+      assetUploadMode: 'replace'
