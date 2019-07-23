@@ -46,7 +46,7 @@ steps:
       contents: |
         mdformat
       targetFolder: '$(Build.BinariesDirectory)'
- - task: ArchiveFiles@2
+  - task: ArchiveFiles@2
     displayName: Gather assets
     inputs:
       rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
