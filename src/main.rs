@@ -24,10 +24,10 @@ fn main() -> Result<(), Error> {
     // (be it a list or an indent, etc), and apply the preface to all of the children in a block
     // We can use a stack to keep track of the things we need to prepend, and the preface will be
     // the combination of all of the things in the stack
-    let fmt = Formatter::new(config);
+    let mut fmt = Formatter::new(config);
     let formatted_doc = fmt.format_md(&root);
 
     // TODO(afnan) remove
-    println!("Test string:\n{}", formatted_doc);
+    println!("\n\n[START DOCUMENT]\n{}\n[END DOCUMENT]", formatted_doc);
     Ok(())
 }
