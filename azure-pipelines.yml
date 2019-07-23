@@ -42,7 +42,7 @@ steps:
   - task: CopyFiles@2
     displayName: Copy release assets
     inputs:
-      sourceFolder: '$(Build.SourcesDirectory)/target/$(TARGET)/release'
+      sourceFolder: '$(Build.SourcesDirectory)/target/release'
       contents: mdformat
       targetFolder: '$(Build.ArtifactStagingDirectory)/mdformat-$(TARGET)'
   - task: GithubRelease@0
