@@ -44,7 +44,7 @@ steps:
     displayName: Run tests
   - script: cargo build --all --release
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-    displayName: Build optimized binary for release
+    displayName: Build release binary
   - task: CopyFiles@2
     displayName: Copy assets
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
