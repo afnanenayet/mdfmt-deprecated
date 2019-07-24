@@ -47,6 +47,7 @@ steps:
     displayName: Build optimized binary for release
   - task: CopyFiles@2
     displayName: Copy assets
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/release'
       contents: |
@@ -54,6 +55,7 @@ steps:
       targetFolder: '$(Build.BinariesDirectory)'
   - task: ArchiveFiles@2
     displayName: Compress binary
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     inputs:
       rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
       archiveType: 'tar'
