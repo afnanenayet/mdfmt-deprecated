@@ -38,10 +38,13 @@ steps:
       echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
     displayName: Windows install rust
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
-  - script: cargo build --all --release
-    displayName: Build optimized binary
+  - script: cargo build --all
+    displayName: Build debug binary
   - script: cargo test --all
-    displayName: Cargo test
+    displayName: Run tests
+  - script: cargo build --all --release
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    displayName: Build optimized binary for release
   - task: CopyFiles@2
     displayName: Copy assets
     inputs:
@@ -50,7 +53,7 @@ steps:
         mdformat
       targetFolder: '$(Build.BinariesDirectory)'
   - task: ArchiveFiles@2
-    displayName: Gather assets
+    displayName: Compress binary
     inputs:
       rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
       archiveType: 'tar'
