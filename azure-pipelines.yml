@@ -4,9 +4,10 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
-- staging
-- trying
+  branches:
+    include: ['master']
+  tags:
+    include: ['*']
 
 strategy:
   matrix:
