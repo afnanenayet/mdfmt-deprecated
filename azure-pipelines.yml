@@ -44,11 +44,11 @@ steps:
   - script: cargo test --all
     displayName: Run tests
   - script: cargo build --all --release
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    condition: and(and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), not( eq( variables['Agent.OS'], 'Windows_NT' ) ))
     displayName: Build release binary
   - task: CopyFiles@2
     displayName: Copy assets
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    condition: and(and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), not( eq( variables['Agent.OS'], 'Windows_NT' ) ))
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/release'
       contents: |
@@ -56,7 +56,7 @@ steps:
       targetFolder: '$(Build.BinariesDirectory)'
   - task: ArchiveFiles@2
     displayName: Compress binary
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    condition: and(and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), not( eq( variables['Agent.OS'], 'Windows_NT' ) ))
     inputs:
       rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
       archiveType: 'tar'
@@ -69,7 +69,7 @@ steps:
       echo "##vso[task.setvariable variable=build.my_tag]$MY_TAG"
     displayName: "Create tag variable"
   - task: GithubRelease@0
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    condition: and(and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), not( eq( variables['Agent.OS'], 'Windows_NT' ) ))
     displayName: 'Create Github release'
     inputs:
       githubConnection: afnanenayetgh
