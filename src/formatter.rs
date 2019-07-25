@@ -11,6 +11,18 @@ use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use std::convert::TryInto;
 use std::{mem::discriminant, rc::Rc, str};
 
+/// Wrapper for `println` for debug builds
+///
+/// This is a wrapper for the `println` macro that only runs on debug builds
+#[macro_use]
+macro_rules! debugln {
+    ($($arg:tt)*) => {
+        if cfg!(debug_assertions) {
+            println!($($arg)*);
+        }
+    };
+}
+
 /// A regular ole' stack
 type Stack<T> = Vec<T>;
 
@@ -70,7 +82,7 @@ impl Formatter {
                 // TODO(afnan) if the node is an inline, just dump the text without the prefix, and
                 // use the text wrapping routines
                 NodeEdge::Start(node) => {
-                    println!("[START {}] {:?}", depth, &node.data.borrow().value);
+                    debugln!("[START {}] {:?}", depth, &node.data.borrow().value);
                     depth += 1;
                     // TODO create a method to get a prefix, pass the prefix to the format method
                     // Check to see whether this node allocates a new prefix. If so, add the prefix
@@ -97,7 +109,7 @@ impl Formatter {
                     node
                 }
                 NodeEdge::End(node) => {
-                    println!("[END {}] {:?}", depth - 1, &node.data.borrow().value);
+                    debugln!("[END {}] {:?}", depth - 1, &node.data.borrow().value);
                     // FIXME(afnan) try to prevent trailing newlines
                     // only add a suffix if the next node is not trailing, otherwise we will end up
                     // with a bunch of trailing newline characters
