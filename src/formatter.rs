@@ -97,7 +97,7 @@ impl Formatter {
                     node
                 }
                 NodeEdge::End(node) => {
-                    println!("[END {}] {:?}", depth, &node.data.borrow().value);
+                    println!("[END {}] {:?}", depth - 1, &node.data.borrow().value);
                     // FIXME(afnan) try to prevent trailing newlines
                     // only add a suffix if the next node is not trailing, otherwise we will end up
                     // with a bunch of trailing newline characters
@@ -150,6 +150,7 @@ impl Formatter {
             NodeValue::HtmlBlock(html_block) => {
                 Some(String::from_utf8(html_block.literal.clone()).unwrap())
             }
+            NodeValue::ThematicBreak => Some("---".to_owned()),
             _ => None,
         }
     }
@@ -281,7 +282,7 @@ fn node_suffix(node: NodeRef) -> Option<String> {
 
         // Otherwise we just want to end the element with a single newline
         return match node_variant {
-            NodeValue::List(_) | NodeValue::Paragraph => Some("\n".to_owned()),
+            NodeValue::Paragraph => Some("\n".to_owned()),
             _ => None,
         };
     }

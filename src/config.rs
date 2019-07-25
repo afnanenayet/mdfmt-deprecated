@@ -81,7 +81,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            line_width: 79,
+            line_width: 80,
             indent_width: 4,
             list_delim: ListDelimiter::Asterisk,
         }
