@@ -1,4 +1,4 @@
-# mdformat
+# mdfmt
 
 [![Build Status](https://dev.azure.com/afnanenayet/mdformat/_apis/build/status/afnanenayet.mdformat?branchName=master)](https://dev.azure.com/afnanenayet/mdformat/_build/latest?definitionId=5&branchName=master)
 

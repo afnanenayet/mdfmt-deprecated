@@ -1,4 +1,4 @@
-//! The configuration details for `mdformat`. This class defines the configuration options for
+//! The configuration details for `mdfmt`. This class defines the configuration options for
 //! serialization and what is acceptable from the command line.
 
 use failure::Fail;

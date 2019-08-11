@@ -1,5 +1,5 @@
 [package]
-name = "mdformat"
+name = "mdfmt"
 version = "0.1.2"
 authors = ["Afnan Enayet <afnan@afnan.io>"]
 edition = "2018"
