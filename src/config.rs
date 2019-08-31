@@ -10,7 +10,6 @@ use structopt::StructOpt;
 
 /// Format markdown files
 #[derive(StructOpt, Debug, Getters, Clone)]
-#[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 #[get = "pub"]
 pub struct Opt {
     /// Whether the file should be modified in place (this is a potentially destructive change)

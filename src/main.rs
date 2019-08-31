@@ -1,13 +1,11 @@
 mod config;
 
-#[macro_use]
 mod formatter;
 mod parser;
 
 use comrak::Arena;
 use config::{Config, Opt};
 use failure::Error;
-
 use formatter::Formatter;
 use parser::parse;
 use std::{fs, rc::Rc};

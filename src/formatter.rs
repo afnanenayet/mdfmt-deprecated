@@ -14,7 +14,7 @@ use std::{mem::discriminant, rc::Rc, str};
 /// Wrapper for `println` for debug builds
 ///
 /// This is a wrapper for the `println` macro that only runs on debug builds
-#[macro_use]
+#[macro_export]
 macro_rules! debugln {
     ($($arg:tt)*) => {
         if cfg!(debug_assertions) {
