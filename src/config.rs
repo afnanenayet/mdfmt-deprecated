@@ -61,7 +61,7 @@ pub enum OptError {
 }
 
 /// The struct representing the configuration options for the app.
-#[derive(Serialize, Deserialize, Getters)]
+#[derive(Serialize, Deserialize, Getters, Debug)]
 #[get = "pub"]
 pub struct Config {
     /// The max line width for the output file.
@@ -93,7 +93,7 @@ impl From<Opt> for Config {
             // TODO(afnan) implement this
             panic!("Config file deserialization hasn't been implemented yet");
         } else {
-            return Self { ..Self::default() };
+            Self { ..Self::default() }
         }
     }
 }

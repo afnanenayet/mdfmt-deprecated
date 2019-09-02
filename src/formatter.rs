@@ -8,12 +8,14 @@
 
 use crate::config::Config;
 use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
+use getset::Getters;
 use std::convert::TryInto;
 use std::{mem::discriminant, rc::Rc, str};
 
 /// Wrapper for `println` for debug builds
 ///
-/// This is a wrapper for the `println` macro that only runs on debug builds
+/// This is a wrapper for the `println` macro that only runs on debug builds. It is a no-op
+/// whenever the debug configuration isn't detected.
 #[macro_export]
 macro_rules! debugln {
     ($($arg:tt)*) => {
@@ -23,7 +25,7 @@ macro_rules! debugln {
     };
 }
 
-/// A regular ole' stack
+/// A convenient type alias for a stack data structure
 type Stack<T> = Vec<T>;
 
 /// A type alias for a reference to a node
@@ -32,7 +34,8 @@ type NodeRef<'a> = &'a comrak::arena_tree::Node<'a, std::cell::RefCell<comrak::n
 /// A member of the prefix stack
 ///
 /// It contains a reference to a prefix, which level it was added at, and what type of node added
-/// it
+/// it.
+#[derive(Debug, Getters)]
 struct PrefixStackElement {
     /// The variant of the node associated with this prefix
     pub node_value: NodeValue,
@@ -45,6 +48,10 @@ struct PrefixStackElement {
 }
 
 /// Routines to format a markdown file
+///
+/// This struct also houses state data that is relevant to the formatter, as well as configuration
+/// data.
+#[derive(Debug)]
 pub struct Formatter {
     /// The formatting configuration
     ///
