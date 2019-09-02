@@ -151,7 +151,6 @@ impl Formatter {
             NodeValue::Link(link) => {
                 let url_str = String::from_utf8(link.url.clone()).unwrap();
                 let link_text = collect_text(node.first_child().unwrap());
-                // FIXME(afnan) the link text isn't actually the link text
                 let formatted_link = format!("[{}]({})", link_text, url_str);
                 Some(formatted_link)
             }
@@ -161,7 +160,8 @@ impl Formatter {
                 Some(wrapped)
             }
             NodeValue::Heading(h) => {
-                // This is guaranteed to never panic because there can be at most 6 levels
+                // This is guaranteed to never panic because there can be at most 6 levels, so we
+                // don't run the risk of an overflow or something like that.
                 let hashtags = "#".repeat(h.level.try_into().unwrap());
                 Some(hashtags + " " + &collect_text(node))
             }
@@ -209,38 +209,47 @@ impl Formatter {
         let tokenized: Vec<&str> = text.split(' ').collect();
 
         // The resulting vector, in which each string is a separate line
-        let mut res_vec = Vec::new();
+        let mut res_vec: Vec<String> = Vec::new();
 
-        // We already know the max line width, so we can reserve the memory ahead of time for some
-        // performance gains
-        let mut current_line = String::with_capacity(*self.config.line_width());
+        // Closure to create a new string, with the capacity of the line width (DRY)
+        let new_string = || String::with_capacity(*self.config.line_width());
+
+        // We already know the max line width, so we can reserve the memory ahead of time
+        let mut current_line = new_string();
 
         // Calculate the padding for the text "box" on the left side
-        let space_prefix = " ".repeat(prefix.unwrap_or("").len());
+        let space_prefix = match prefix {
+            Some(p) => Some(" ".repeat(p.len())),
+            None => None,
+        };
 
-        // Push the prefix only onto the first line
+        // Push the actual prefix only onto the first line. All subsequent lines will have a space
+        // offset equal to the offset created by the prefix.
         if let Some(p) = prefix {
             current_line.push_str(p);
         }
 
         // Loop through each word, either pushing to the current line or creating a new line based
         // on whether the word would fit on the current line
+        // FIXME(afnan) fix trailing characters for each line
         for word in tokenized {
             let space_left = self.config.line_width() - current_line.len();
-            if word.len() + 1 > space_left {
-                res_vec.push(current_line);
-                current_line = String::with_capacity(*self.config.line_width());
 
-                if prefix.is_some() {
-                    current_line.push_str(&space_prefix);
+            // If we know the next word will break the line limit, then clear the current line
+            // buffer and push the last line
+            if word.len() > space_left {
+                res_vec.push(current_line.trim().to_owned());
+                current_line = new_string();
+
+                if let Some(p) = space_prefix.as_ref() {
+                    current_line.push_str(&p);
                 }
             }
             current_line.push_str(word);
             current_line.push_str(" ");
         }
-
         // Push the last line
-        res_vec.push(current_line);
+        res_vec.push(current_line.trim().to_owned());
         res_vec.join("\n")
     }
 }
