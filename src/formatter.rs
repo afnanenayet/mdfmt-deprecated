@@ -78,7 +78,7 @@ impl Formatter {
         let mut formatted = String::new();
         let mut depth = 0;
         for edge in root.traverse() {
-            let node = match edge {
+            match edge {
                 // TODO(afnan) if the node is an inline, just dump the text without the prefix, and
                 // use the text wrapping routines
                 NodeEdge::Start(node) => {
@@ -106,7 +106,6 @@ impl Formatter {
                     if let Some(formatted_string) = self.format_node(node, prefix_opt) {
                         formatted.push_str(&formatted_string);
                     }
-                    node
                 }
                 NodeEdge::End(node) => {
                     debugln!("[END {}] {:?}", depth - 1, &node.data.borrow().value);
@@ -129,9 +128,8 @@ impl Formatter {
                         }
                     }
                     depth -= 1;
-                    node
                 }
-            };
+            }
         }
         formatted.trim().to_owned()
     }
@@ -146,6 +144,7 @@ impl Formatter {
             NodeValue::Link(link) => {
                 let url_str = String::from_utf8(link.url.clone()).unwrap();
                 let link_text = collect_text(node.first_child().unwrap());
+                // FIXME(afnan) the link text isn't actually the link text
                 let formatted_link = format!("[{}]({})", link_text, url_str);
                 Some(formatted_link)
             }
@@ -262,7 +261,7 @@ fn collect_text_helper(node: NodeRef, output: &mut Vec<u8>) {
 
 /// Recursively get all of the text from a node
 ///
-/// This is a wrapper for the actual recursive function
+/// This is a wrapper for the actual recursive method
 fn collect_text(node: NodeRef) -> String {
     let mut unicode: Vec<u8> = Vec::new();
     collect_text_helper(node, &mut unicode);
@@ -282,23 +281,20 @@ fn node_suffix(node: NodeRef) -> Option<String> {
         let parent_type = discriminant(&parent.data.borrow().value);
         let document_type = discriminant(&NodeValue::Document);
 
-        // These are high-level blocks that should be separated by newlines
-        // We special case lists because they already having an extra newline from their internal
-        // `Paragraph` blocks
+        // These are high-level blocks that should be separated by newlines. We special case lists
+        // because they already have an extra newline from their internal `Paragraph` blocks.
         if parent_type == document_type && node_variant.block() {
             return match node_variant {
                 NodeValue::List(_) => Some("\n".to_owned()),
                 _ => Some("\n\n".to_owned()),
             };
         }
-
         // Otherwise we just want to end the element with a single newline
         return match node_variant {
             NodeValue::Paragraph => Some("\n".to_owned()),
             _ => None,
         };
     }
-
     // This branch only triggers when the `document` node is passed in, which is a sentinel node
     // that doesn't have any information
     None
