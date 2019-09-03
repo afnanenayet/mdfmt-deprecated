@@ -10,7 +10,7 @@ use crate::config::Config;
 use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use getset::Getters;
 use std::convert::TryInto;
-use std::{mem::discriminant, rc::Rc, str};
+use std::{cmp::max, mem::discriminant, rc::Rc, str};
 
 /// Wrapper for `println` for debug builds
 ///
@@ -138,6 +138,9 @@ impl Formatter {
                 }
             }
         }
+        // FIXME(afnan) there are still extraneous newlines that we need to remove with a final
+        // pass, which is unnecessary. We should fix where the newlines are inserted in the first
+        // place.
         formatted.trim().to_owned()
     }
 
@@ -180,6 +183,8 @@ impl Formatter {
     /// need to supply the `depth` of the node in the syntax tree.
     ///
     /// Most nodes do not have a prefix, which is indicated by the `None` type.
+    // TODO(afnan) We should maybe add a newline for a node that is a child of a paragraph, TBD
+    // pending how we handle text wrapping for links.
     fn node_prefix(&self, node: NodeRef, depth: usize) -> Option<String> {
         match &node.data.borrow().value {
             NodeValue::Item(_) => {
@@ -230,15 +235,22 @@ impl Formatter {
         }
 
         // Loop through each word, either pushing to the current line or creating a new line based
-        // on whether the word would fit on the current line
-        // FIXME(afnan) fix trailing characters for each line
-        for word in tokenized {
-            let space_left = self.config.line_width() - current_line.len();
+        // on whether the word would fit on the current line. This performs a text wrap in O(n)
+        // time.
+        for (index, word) in tokenized.iter().enumerate() {
+            let space_left = if *self.config.line_width() < current_line.len() {
+                0
+            } else {
+                *self.config.line_width() - current_line.len()
+            };
 
-            // If we know the next word will break the line limit, then clear the current line
-            // buffer and push the last line
+            // We check a few different lengths here so that we can prevent accidentally adding
+            // trailing whitespaces to the end of a line. In order to determine whether we want to
+            // add whitespace to the end of the current line, we want to check and see if the next
+            // word will fit on the line. If the next word does not fit on the line, then don't add
+            // a trailing character.
             if word.len() > space_left {
-                res_vec.push(current_line.trim().to_owned());
+                res_vec.push(current_line);
                 current_line = new_string();
 
                 if let Some(p) = space_prefix.as_ref() {
@@ -246,15 +258,29 @@ impl Formatter {
                 }
             }
             current_line.push_str(word);
-            current_line.push_str(" ");
+            let next_index = index + 1;
+
+            if next_index < tokenized.len() {
+                // Guard against overflows when the current line's length goes over the configured
+                // line width
+                let space_left = if current_line.len() > *self.config.line_width() {
+                    0
+                } else {
+                    self.config.line_width() - current_line.len()
+                };
+
+                if tokenized[next_index].len() <= space_left {
+                    current_line.push_str(" ");
+                }
+            }
         }
         // Push the last line
-        res_vec.push(current_line.trim().to_owned());
+        res_vec.push(current_line);
         res_vec.join("\n")
     }
 }
 
-/// Recursively the text from a node, if it exists
+/// Recursively extract the inline text from a node (if it exists)
 ///
 /// This function takes a reference to an existing unicode vector so it can recursively extend
 /// the output.
