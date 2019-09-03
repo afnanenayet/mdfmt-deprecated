@@ -1,0 +1,22 @@
+# Maintainer: Afnan Enayet <afnan@afnan.io>
+pkgname=mdfmt
+pkgver=0.1.15
+pkgrel=1
+pkgdesc="A formatter for your markdown documents"
+arch=('any')
+url="https://github.com/afnanenayet/mdfmt"
+license=('MIT')
+makedepends=('rust')
+optdepends=()
+provides=('mdfmt')
+conflicts=('mdfmt')
+source=($pkgname-$pkgver.tar.gz)
+md5sums=() #autofill using updpkgsums
+
+build() {
+  cargo build --release --locked
+}
+
+package() {
+  install -Dm 755 target/release/${pkgname} -t "${pkgdir}/usr/bin"
+}
