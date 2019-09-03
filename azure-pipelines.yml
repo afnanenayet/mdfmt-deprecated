@@ -52,16 +52,16 @@ steps:
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/release'
       contents: |
-        mdformat
+        mdfmt
       targetFolder: '$(Build.BinariesDirectory)'
   - task: ArchiveFiles@2
     displayName: Compress binary
     condition: and(and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), not( eq( variables['Agent.OS'], 'Windows_NT' ) ))
     inputs:
-      rootFolderOrFile: '$(Build.BinariesDirectory)/mdformat'
+      rootFolderOrFile: '$(Build.BinariesDirectory)/mdfmt'
       archiveType: 'tar'
       tarCompression: 'gz'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/mdformat-$(target).tar.gz'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/mdfmt-$(target).tar.gz'
   - bash: |
       MY_TAG="$(Build.SourceBranch)"
       MY_TAG=${MY_TAG#refs/tags/}
@@ -73,12 +73,12 @@ steps:
     displayName: 'Create Github release'
     inputs:
       githubConnection: afnanenayetgh
-      repositoryName: afnanenayet/mdformat
+      repositoryName: afnanenayet/mdfmt
       action: 'edit'
       tag: '$(build.my_tag)'
       tagSource: 'manual'
       title: '$(build.my_tag)'
       compareWith: 'lastFullRelease'
       addChangeLog: true
-      assets: '$(Build.ArtifactStagingDirectory)/mdformat-$(target).tar.gz'
+      assets: '$(Build.ArtifactStagingDirectory)/mdfmt-$(target).tar.gz'
       assetUploadMode: 'replace'
