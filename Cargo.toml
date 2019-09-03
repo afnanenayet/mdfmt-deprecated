@@ -1,6 +1,6 @@
 [package]
 name = "mdfmt"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Afnan Enayet <afnan@afnan.io>"]
 edition = "2018"
 publish = false
