@@ -10,7 +10,7 @@ use crate::config::Config;
 use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use getset::Getters;
 use std::convert::TryInto;
-use std::{cmp::max, mem::discriminant, rc::Rc, str};
+use std::{mem::discriminant, rc::Rc, str};
 
 /// Wrapper for `println` for debug builds
 ///
@@ -151,6 +151,13 @@ impl Formatter {
     /// prefix on the stack.
     fn format_node(&self, node: NodeRef, prefix: Option<&str>) -> Option<String> {
         match &node.data.borrow().value {
+            NodeValue::CodeBlock(node) => {
+                // This is the language you put after the backticks (if there is one specified)
+                // ex: ```c
+                let lang = String::from_utf8(node.info.clone()).unwrap();
+                let code = String::from_utf8(node.literal.clone()).unwrap();
+                Some(format!("```{}\n{}\n```", lang, code))
+            }
             NodeValue::Link(link) => {
                 let url_str = String::from_utf8(link.url.clone()).unwrap();
                 let link_text = collect_text(node.first_child().unwrap());
