@@ -9,8 +9,65 @@ well formatted Markdown files. It uses the
 [comrak](https://github.com/kivikakk/comrak) parsing library to create an AST
 from your markdown file, then formats as necessary.
 
-This formatter is alpha stage software and not all markdown elements properly
-work with the formatter.
+Example input:
+
+```
+# test
+
+And on the first day, God created Markdown files and let us run wild. People wrote markdown files with no regard for line widths and whatnot.
+
+* Even with lists, people write toooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo much
+    * Let's add some depth to this list
+
+And why not a page break?
+
+---
+* second list
+[link](example.com)
+
+I hate indented code blocks by the way, or really anything that depends on whitespace.
+
+    #include "stdio.h"
+
+    int main(void) {
+        return 0;
+    }
+```
+
+Output:
+
+```txt
+# test
+
+And on the first day, God created Markdown files and let us run wild. People
+wrote markdown files with no regard for line widths and whatnot.
+
+* Even with lists, people write
+  toooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  much
+    * Let’s add some depth to this list
+
+And why not a page break?
+
+---
+
+* second list [link](example.com)
+
+I hate indented code blocks by the way, or really anything that depends on
+whitespace.
+
+```
+#include "stdio.h"
+
+int main(void) {
+    return 0;
+}
+
+```
+```
+
+_NOTE: This formatter is alpha stage software and not all markdown elements properly
+work with the formatter._
 
 ## Configuration
 
