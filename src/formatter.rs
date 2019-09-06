@@ -310,7 +310,7 @@ fn collect_text_helper(node: NodeRef, output: &mut Vec<u8>) {
 
 /// Recursively get all of the text from a node
 ///
-/// This is a wrapper for the actual recursive method
+/// _NOTE: This is a wrapper for the actual recursive method_
 fn collect_text(node: NodeRef) -> String {
     let mut unicode: Vec<u8> = Vec::new();
     collect_text_helper(node, &mut unicode);
