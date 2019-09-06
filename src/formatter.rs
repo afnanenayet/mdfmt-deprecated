@@ -160,7 +160,7 @@ impl Formatter {
             }
             NodeValue::Link(link) => {
                 let url_str = String::from_utf8(link.url.clone()).unwrap();
-                let link_text = collect_text(node.first_child().unwrap());
+                let link_text = collect_link_title_text(node);
                 let formatted_link = format!("[{}]({})", link_text, url_str);
                 Some(formatted_link)
             }
@@ -306,6 +306,24 @@ fn collect_text_helper(node: NodeRef, output: &mut Vec<u8>) {
             }
         }
     };
+}
+
+/// Collects the link for a text
+///
+/// Collect the title text for a link. This is the part of the link that is in the brackets. For
+/// example, if we had the markown snippet `[here is a link](example.com)`, then the title text
+/// would be "here is a link".
+///
+/// We have to keep this method separate from the collect text method in order to make sure that
+/// the other elements don't accidentally recursively pick up the text in a link title and
+/// duplicate it elsewhere in the document.
+fn collect_link_title_text(node: NodeRef) -> String {
+    let mut unicode: Vec<u8> = Vec::new();
+
+    for child in node.children() {
+        collect_text_helper(child, &mut unicode);
+    }
+    String::from_utf8(unicode).unwrap_or_else(|_| "".to_owned())
 }
 
 /// Recursively get all of the text from a node
