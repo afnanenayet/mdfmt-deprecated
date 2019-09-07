@@ -63,6 +63,26 @@ pub struct Formatter {
     prefix_stack: Stack<PrefixStackElement>,
 }
 
+/// Various types of inline markdown elements that have special behavior when text wrapped.
+#[derive(Debug, Clone)]
+enum TextWrapElement {
+    /// A regular text element
+    Text(String),
+
+    /// A markdown link
+    ///
+    /// Example: `[this is a link](example.com)`
+    Link(String),
+
+    /// A regular code block (code that is enclosed by the single backticks).
+    ///
+    /// Example: `\`code block\``
+    CodeBlock(String),
+
+    /// A fenced blocked block (code surrounded by the three backticks).
+    CodeFence(String),
+}
+
 impl Formatter {
     /// Create a new `Formatter`, given a formatting config
     pub fn new(config: Rc<Config>) -> Self {
