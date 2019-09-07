@@ -10,7 +10,7 @@ use crate::config::Config;
 use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use getset::Getters;
 use std::convert::TryInto;
-use std::{mem::discriminant, rc::Rc, str};
+use std::{mem::discriminant, rc::Rc, str, fmt::{self, Display}};
 
 /// Wrapper for `println` for debug builds
 ///
@@ -81,6 +81,17 @@ enum TextWrapElement {
 
     /// A fenced blocked block (code surrounded by the three backticks).
     CodeFence(String),
+}
+
+impl Display for TextWrapElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TextWrapElement::Text(s) => write!(f, "{}", s),
+            TextWrapElement::Link(s) => write!(f, "{}", s),
+            TextWrapElement::CodeBlock(s) => write!(f, "{}", s),
+            TextWrapElement::CodeFence(s) => write!(f, "{}", s),
+        }
+    }
 }
 
 impl Formatter {
@@ -310,11 +321,16 @@ impl Formatter {
 /// Recursively extract the inline text from a node (if it exists)
 ///
 /// This function takes a reference to an existing unicode vector so it can recursively extend
-/// the output.
-fn collect_text_helper(node: NodeRef, output: &mut Vec<u8>) {
+/// the output. This will also perform formatting for inline elements.
+fn collect_text_helper(node: NodeRef, output: &mut Vec<TextWrapElement>) {
     match node.data.borrow().value {
         // Links should handle their own text so we ignore any text inside of a link node
-        NodeValue::Link(_) => (),
+        NodeValue::Link(link) => {
+            let url = String::from_utf8(link.url.clone()).unwrap();
+            let mut title_vec = Vec::new();
+            collect_text_helper(node.children(), &mut title_vec);
+            let link_text = format!("[{}]({})", title, url);
+        }
         NodeValue::Text(ref literal) | NodeValue::Code(ref literal) => {
             output.extend_from_slice(literal)
         }
