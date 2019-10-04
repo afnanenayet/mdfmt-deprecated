@@ -10,7 +10,12 @@ use crate::config::Config;
 use comrak::{arena_tree::NodeEdge, nodes::NodeValue};
 use getset::Getters;
 use std::convert::TryInto;
-use std::{mem::discriminant, rc::Rc, str, fmt::{self, Display}};
+use std::{
+    fmt::{self, Display},
+    mem::discriminant,
+    rc::Rc,
+    str,
+};
 
 /// Wrapper for `println` for debug builds
 ///
@@ -72,7 +77,14 @@ enum TextWrapElement {
     /// A markdown link
     ///
     /// Example: `[this is a link](example.com)`
-    Link(String),
+    Link {
+        /// The title of the URL (this is the text that is displayed, not the actual location that
+        /// the link points to)
+        title: String,
+
+        /// The URL that the link points to
+        url: String,
+    },
 
     /// A regular code block (code that is enclosed by the single backticks).
     ///
@@ -80,17 +92,32 @@ enum TextWrapElement {
     CodeBlock(String),
 
     /// A fenced blocked block (code surrounded by the three backticks).
-    CodeFence(String),
+    CodeFence {
+        /// A string literal with the actual code
+        code: String,
+
+        /// The string literal representing the optional language indicator that appears after the
+        /// three backticks.
+        lang: Option<String>,
+    },
 }
 
 impl Display for TextWrapElement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TextWrapElement::Text(s) => write!(f, "{}", s),
-            TextWrapElement::Link(s) => write!(f, "{}", s),
-            TextWrapElement::CodeBlock(s) => write!(f, "{}", s),
-            TextWrapElement::CodeFence(s) => write!(f, "{}", s),
+            TextWrapElement::Link { title: t, url: u } => write!(f, "[{}]({})", t, u),
+            TextWrapElement::CodeBlock(s) => write!(f, "`{}`", s),
+            TextWrapElement::CodeFence { lang: l, code: c } => {
+                write!(f, "```{}\n{}\n```\n", l.unwrap_or_default(), c)
+            }
         }
+    }
+}
+
+impl TextWrapElement {
+    fn len(&self) -> usize {
+        self.to_string().len()
     }
 }
 
@@ -328,8 +355,8 @@ fn collect_text_helper(node: NodeRef, output: &mut Vec<TextWrapElement>) {
         NodeValue::Link(link) => {
             let url = String::from_utf8(link.url.clone()).unwrap();
             let mut title_vec = Vec::new();
-            collect_text_helper(node.children(), &mut title_vec);
-            let link_text = format!("[{}]({})", title, url);
+            collect_text_helper(node.first_child(), &mut title_vec);
+            let link_text = format!("[{}]({})", title_vec, url);
         }
         NodeValue::Text(ref literal) | NodeValue::Code(ref literal) => {
             output.extend_from_slice(literal)
